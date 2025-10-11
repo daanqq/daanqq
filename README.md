@@ -25,9 +25,9 @@
 [![Neovim](https://img.shields.io/badge/-Neovim-black?style=flat-square&logo=neovim&color=3a4a4c)](https://neovim.io/)
 
 ### Связаться со мной:
-[![Telegram](https://img.shields.io/badge/-neandreev-black?style=flat-square&logo=telegram&color=3a4a4c)](https://t.me/neandreev)
-[![Mail](https://img.shields.io/badge/-mail@neandreev.ru-black?style=flat-square&color=3a4a4c)](mailto:mail@neandreev.ru)
+[![Telegram](https://img.shields.io/badge/-daanqq-black?style=flat-square&logo=telegram&color=3a4a4c)](https://t.me/daanqq)
+[![Mail](https://img.shields.io/badge/-qq@daanqq.ru-black?style=flat-square&color=3a4a4c)](mailto:qq@daanqq.ru)
 
 ***
-[<img align="left" width="390" alt="🦑" src="https://gist.githubusercontent.com/neandreev/d92e2b7e58dd903a609271efa20f745c/raw/metrics-left.svg">](https://github.com/lowlighter/metrics 'Сделано при помощи lowlighter/metrics')
-[<img align="left" width="390" alt="🦑" src="https://gist.githubusercontent.com/neandreev/d92e2b7e58dd903a609271efa20f745c/raw/metrics-right.svg">](https://github.com/lowlighter/metrics 'Сделано при помощи lowlighter/metrics')
+[<img align="left" width="390" alt="🦑" src="https://gist.githubusercontent.com/daanqq/d92e2b7e58dd903a609271efa20f745c/raw/metrics-left.svg">](https://github.com/lowlighter/metrics 'Сделано при помощи lowlighter/metrics')
+[<img align="left" width="390" alt="🦑" src="https://gist.githubusercontent.com/daanqq/d92e2b7e58dd903a609271efa20f745c/raw/metrics-right.svg">](https://github.com/lowlighter/metrics 'Сделано при помощи lowlighter/metrics')
