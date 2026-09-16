@@ -35,31 +35,23 @@ def rotation_y(angle: float) -> np.ndarray:
     return np.array(((c, 0.0, s), (0.0, 1.0, 0.0), (-s, 0.0, c)))
 
 
-def rotation_z(angle: float) -> np.ndarray:
-    c, s = math.cos(angle), math.sin(angle)
-    return np.array(((c, -s, 0.0), (s, c, 0.0), (0.0, 0.0, 1.0)))
-
-
-def mobius(u: np.ndarray, v: np.ndarray) -> np.ndarray:
-    radial = RADIUS + v * np.cos(u / 2.0)
+def mobius(u: np.ndarray, v: np.ndarray, roll: float) -> np.ndarray:
+    cross_section_angle = u / 2.0 + roll
+    radial = RADIUS + v * np.cos(cross_section_angle)
     return np.stack(
         (
             radial * np.cos(u),
             radial * np.sin(u),
-            v * np.sin(u / 2.0),
+            v * np.sin(cross_section_angle),
         ),
         axis=-1,
     )
 
 
-def transform(points: np.ndarray, phase: float) -> np.ndarray:
-    # The full Z rotation preserves the original shader's calm continuous turn;
-    # the small Y oscillation exposes the Möbius twist without going edge-on.
-    matrix = (
-        rotation_z(phase)
-        @ rotation_y(0.20 * math.sin(phase))
-        @ rotation_x(math.radians(57.0))
-    )
+def transform(points: np.ndarray) -> np.ndarray:
+    # Keep the ring itself fixed: animation comes from rolling the ribbon's
+    # cross-section around its centerline, not from rotating a static picture.
+    matrix = rotation_y(math.radians(-8.0)) @ rotation_x(math.radians(57.0))
     return points @ matrix.T
 
 
@@ -73,7 +65,7 @@ def surface_primitives(phase: float) -> list[tuple[float, str, np.ndarray]]:
     u = np.linspace(0.0, math.tau, SURFACE_U_SEGMENTS + 1)
     v = np.linspace(-HALF_WIDTH, HALF_WIDTH, SURFACE_V_SEGMENTS + 1)
     uu, vv = np.meshgrid(u, v, indexing="ij")
-    world = transform(mobius(uu, vv), phase)
+    world = transform(mobius(uu, vv, phase))
     screen = project(world)
 
     primitives: list[tuple[float, str, np.ndarray]] = []
@@ -98,7 +90,7 @@ def edge_primitives(phase: float) -> list[tuple[float, str, np.ndarray]]:
     # u=0..4π with fixed +width traces the strip's single continuous boundary.
     u = np.linspace(0.0, math.tau * 2.0, EDGE_SEGMENTS + 1)
     v = np.full_like(u, HALF_WIDTH)
-    world = transform(mobius(u, v), phase)
+    world = transform(mobius(u, v, phase))
     screen = project(world)
 
     return [
@@ -141,7 +133,8 @@ def render_frame(phase: float, color: tuple[int, int, int]) -> Image.Image:
 
 def save_animation(output: Path, color: tuple[int, int, int]) -> None:
     frames = [
-        render_frame(math.tau * frame / FRAME_COUNT, color)
+        # A half-turn returns an untextured Möbius surface to the same geometry.
+        render_frame(math.pi * frame / FRAME_COUNT, color)
         for frame in range(FRAME_COUNT)
     ]
     output.parent.mkdir(parents=True, exist_ok=True)

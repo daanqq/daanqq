@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+from render_mobius import HALF_WIDTH, mobius, transform
+
 
 EXPECTED_SIZE = (840, 360)
 EXPECTED_FRAMES = 72
@@ -32,20 +34,41 @@ def check_asset(path: Path) -> None:
         assert total_alpha > 0, f"{path}: frame {frame_index} is empty"
         assert np.any(alpha == 0), f"{path}: frame {frame_index} has no transparency"
 
-        yy, xx = np.indices(alpha.shape)
-        visible_center = np.array(
-            ((xx * alpha).sum() / total_alpha, (yy * alpha).sum() / total_alpha)
-        )
-        assert np.all(np.abs(visible_center - center) < max_center_offset), (
+        bbox = image.convert("RGBA").getchannel("A").getbbox()
+        assert bbox is not None
+        visible_center = np.array(((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2))
+        assert np.all(np.abs(visible_center - center) <= max_center_offset), (
             f"{path}: frame {frame_index} is not centered"
         )
 
 
+def check_intrinsic_roll() -> None:
+    u = np.linspace(0.0, np.pi * 2.0, 32)
+    centerline = np.zeros_like(u)
+    edge = np.full_like(u, HALF_WIDTH)
+
+    center_start = transform(mobius(u, centerline, 0.0))
+    center_quarter_turn = transform(mobius(u, centerline, np.pi / 2.0))
+    edge_start = transform(mobius(u, edge, 0.0))
+    edge_quarter_turn = transform(mobius(u, edge, np.pi / 2.0))
+
+    assert np.allclose(center_start, center_quarter_turn), (
+        "the strip centerline rotates instead of staying fixed"
+    )
+    assert not np.allclose(edge_start, edge_quarter_turn), (
+        "the strip does not roll around its centerline"
+    )
+
+
 def main() -> None:
+    check_intrinsic_roll()
     assets_dir = Path(__file__).resolve().parents[1] / "assets"
     for asset in ASSETS:
         check_asset(assets_dir / asset)
-    print("Möbius assets are valid: 840x360, 21:9, centered, transparent, 72 frames.")
+    print(
+        "Möbius assets are valid: intrinsic roll, 840x360, 21:9, "
+        "centered, transparent, 72 frames."
+    )
 
 
 if __name__ == "__main__":
