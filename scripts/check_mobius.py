@@ -9,7 +9,7 @@ from PIL import Image
 from render_mobius import HALF_WIDTH, mobius, transform
 
 
-EXPECTED_SIZE = (840, 360)
+EXPECTED_SIZE = (1000, 360)
 EXPECTED_FRAMES = 72
 ASSETS = ("mobius-dark.webp", "mobius-light.webp")
 
@@ -18,7 +18,7 @@ def check_asset(path: Path) -> None:
     image = Image.open(path)
 
     assert image.size == EXPECTED_SIZE, f"{path}: unexpected size {image.size}"
-    assert image.width * 9 == image.height * 21, f"{path}: not 21:9"
+    assert image.width * 9 == image.height * 25, f"{path}: not 25:9"
     assert image.n_frames == EXPECTED_FRAMES, (
         f"{path}: expected {EXPECTED_FRAMES} frames, got {image.n_frames}"
     )
@@ -26,6 +26,7 @@ def check_asset(path: Path) -> None:
 
     center = np.array((image.width / 2, image.height / 2))
     max_center_offset = np.array((image.width, image.height)) * 0.05
+    vertical_boxes = []
 
     for frame_index in range(image.n_frames):
         image.seek(frame_index)
@@ -36,10 +37,18 @@ def check_asset(path: Path) -> None:
 
         bbox = image.convert("RGBA").getchannel("A").getbbox()
         assert bbox is not None
+        vertical_boxes.append(bbox)
         visible_center = np.array(((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2))
         assert np.all(np.abs(visible_center - center) <= max_center_offset), (
             f"{path}: frame {frame_index} is not centered"
         )
+
+    assert min(box[1] for box in vertical_boxes) <= 1, (
+        f"{path}: animation does not reach the top edge"
+    )
+    assert max(box[3] for box in vertical_boxes) >= image.height - 1, (
+        f"{path}: animation does not reach the bottom edge"
+    )
 
 
 def check_intrinsic_roll() -> None:
@@ -66,7 +75,7 @@ def main() -> None:
     for asset in ASSETS:
         check_asset(assets_dir / asset)
     print(
-        "Möbius assets are valid: intrinsic roll, 840x360, 21:9, "
+        "Möbius assets are valid: intrinsic roll, 1000x360, 25:9, "
         "centered, transparent, 72 frames."
     )
 

@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 
-WIDTH = 840
+WIDTH = 1000
 HEIGHT = 360
 FPS = 12
 DURATION_SECONDS = 6
@@ -23,6 +23,8 @@ HALF_WIDTH = 0.34
 SURFACE_U_SEGMENTS = 112
 SURFACE_V_SEGMENTS = 8
 EDGE_SEGMENTS = 448
+EDGE_MARGIN = 1.0 * SUPERSAMPLING
+MAX_EDGE_WIDTH = 3.0 * SUPERSAMPLING
 
 
 def rotation_x(angle: float) -> np.ndarray:
@@ -55,10 +57,34 @@ def transform(points: np.ndarray) -> np.ndarray:
     return points @ matrix.T
 
 
+def projection_parameters() -> tuple[float, float]:
+    # Fit the union of all poses to the canvas height, so the ribbon reaches
+    # the top and bottom edges without drifting outside the image while it rolls.
+    u = np.linspace(0.0, math.tau * 2.0, 1024)
+    v = np.linspace(-HALF_WIDTH, HALF_WIDTH, 9)
+    phases = np.linspace(0.0, math.pi, FRAME_COUNT * 4 + 1)
+    y_values = []
+
+    for phase in phases:
+        uu, vv = np.meshgrid(u, v, indexing="ij")
+        y_values.append(transform(mobius(uu, vv, phase))[..., 1].ravel())
+
+    y_min = min(values.min() for values in y_values)
+    y_max = max(values.max() for values in y_values)
+    fit_margin = EDGE_MARGIN + MAX_EDGE_WIDTH / 2.0
+    scale = (HEIGHT * SUPERSAMPLING - 2.0 * fit_margin) / (y_max - y_min)
+    center_y = HEIGHT * SUPERSAMPLING / 2.0 + (y_max + y_min) * scale / 2.0
+    return scale, center_y
+
+
+PROJECTION_SCALE, PROJECTION_CENTER_Y = projection_parameters()
+
+
 def project(points: np.ndarray) -> np.ndarray:
-    scale = HEIGHT * SUPERSAMPLING * 0.31
-    center = np.array((WIDTH * SUPERSAMPLING / 2, HEIGHT * SUPERSAMPLING / 2))
-    return center + points[..., :2] * np.array((scale, -scale))
+    center = np.array(
+        (WIDTH * SUPERSAMPLING / 2, PROJECTION_CENTER_Y)
+    )
+    return center + points[..., :2] * np.array((PROJECTION_SCALE, -PROJECTION_SCALE))
 
 
 def surface_primitives(phase: float) -> list[tuple[float, str, np.ndarray]]:
